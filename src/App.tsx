@@ -24,9 +24,6 @@ import {
   serverTimestamp,
   onSnapshot,
 } from "firebase/firestore";
-
-// Daily challenge rotates every 24 hours based on the date
-
 const STYLES = `
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -39,18 +36,27 @@ const STYLES = `
   --font:'Nunito',sans-serif;--mono:'JetBrains Mono',monospace;--display:'Fredoka One',sans-serif;
 }
 body.light{
-  --bg:#f0f4f8;--bg2:#e8edf2;--card:#ffffff;--card2:#f0f4f8;
+  --bg:#f0f4f8;--bg2:#e2e8f0;--card:#ffffff;--card2:#f8fafc;
   --border:rgba(0,0,0,0.10);
-  --text:#1a1a2e;--muted:#5a6a7a;
-  --lime:#5a9e0a;--cyan:#0077aa;
+  --text:#0f172a;--muted:#64748b;
 }
-body.light .nav{background:rgba(240,244,248,0.92);}
-body.light .code-line:hover{background:rgba(0,0,0,0.05);}
-body.light .code-line.selected{background:rgba(239,68,68,0.12);}
-body.light .code-line.correct{background:rgba(34,197,94,0.12);}
-body.light .nav-logo{background:linear-gradient(90deg,var(--lime),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+body.light ::-webkit-scrollbar-thumb{background:var(--lime)}
+body.light .nav{background:rgba(240,244,248,0.92)!important;border-bottom:1px solid rgba(0,0,0,0.08)!important}
+body.light .card{background:#ffffff;border-color:rgba(0,0,0,0.08)}
+body.light .input-field{background:#f1f5f9;border-color:rgba(0,0,0,0.12);color:#0f172a}
+body.light .btn-ghost{border-color:rgba(0,0,0,0.15);color:#0f172a}
+body.light .post{background:#ffffff;border-color:rgba(0,0,0,0.08)}
+body.light .modal{background:#ffffff}
+body.light .code-line:hover{background:rgba(0,0,0,0.04)}
+body.light .code-line.selected{background:rgba(239,68,68,0.10)}
+body.light .code-line.correct{background:rgba(34,197,94,0.10)}
+body.light .tab{color:#64748b}
+body.light .tab.active{background:var(--lime);color:#0a0a12}
+body.light .badge-box{background:#f1f5f9;border-color:rgba(0,0,0,0.08)}
+body.light .lb-row:hover{background:rgba(0,0,0,0.03)}
+body.light input,body.light textarea,body.light select{color:#0f172a}
 html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden;min-height:100vh}
+body{background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden;min-height:100vh;transition:background .3s,color .3s}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--lime);border-radius:3px}
 button{cursor:pointer;border:none;outline:none;font-family:var(--font)}
 input,textarea,select{font-family:var(--font);outline:none;border:none;background:none;color:var(--text)}
@@ -1482,14 +1488,118 @@ const CHALLENGES = [
   },
 ];
 
+
 // Daily challenge rotates every 24 hours based on the date
+// Each daily problem has the same concept in all 7 languages
+const DAILY_PROBLEMS = [
+  {
+    concept: 'Off-by-one Loop',
+    description: 'This loop should print numbers 1 to 5, but the output is wrong. Fix the range.',
+    errorType: 'Logic', difficulty: 'easy', xp: 60,
+    variants: {
+      Python:     { lines: ['def print_numbers():','  for i in range(0, 5):','    print(i)','print_numbers()'], bugLine:1, fixed:'  for i in range(1, 6):', expectedOutput:'1\n2\n3\n4\n5', hint:'range(start, stop) excludes stop.' },
+      JavaScript: { lines: ['function printNumbers() {','  for (let i = 0; i < 5; i++) {','    console.log(i);','  }','}','printNumbers();'], bugLine:1, fixed:'  for (let i = 1; i <= 5; i++) {', expectedOutput:'1\n2\n3\n4\n5', hint:'Start from 1 and use <= 5.' },
+      Java:       { lines: ['public class Main {','    public static void main(String[] args) {','        for (int i = 0; i < 5; i++) {','            System.out.println(i);','        }','    }','}'], bugLine:2, fixed:'        for (int i = 1; i <= 5; i++) {', expectedOutput:'1\n2\n3\n4\n5', hint:'Start i at 1 and use <= 5.' },
+      C:          { lines: ['#include <stdio.h>','int main() {','    for (int i = 0; i < 5; i++) {','        printf("%d\\n", i);','    }','    return 0;','}'], bugLine:2, fixed:'    for (int i = 1; i <= 5; i++) {', expectedOutput:'1\n2\n3\n4\n5', hint:'Change start to 1 and condition to <= 5.' },
+      'C++':      { lines: ['#include <iostream>','int main() {','    for (int i = 0; i < 5; i++) {','        std::cout << i << std::endl;','    }','    return 0;','}'], bugLine:2, fixed:'    for (int i = 1; i <= 5; i++) {', expectedOutput:'1\n2\n3\n4\n5', hint:'Start at 1 and use <= 5.' },
+      HTML:       { lines: ['<ul>','  <li>Item 0</li>','  <li>Item 1</li>','  <li>Item 2</li>','  <li>Item 3</li>','  <li>Item 4</li>','</ul>'], bugLine:1, fixed:'  <li>Item 1</li>', expectedOutput:'Item 1\nItem 2\nItem 3\nItem 4\nItem 5', hint:'Lists should start at Item 1, not Item 0.' },
+      CSS:        { lines: ['.list-item:nth-child(n+0) {','  color: blue;','}'], bugLine:0, fixed:'.list-item:nth-child(n+1) {', expectedOutput:'.list-item:nth-child(n+1) { color: blue; }', hint:'nth-child index starts at 1, not 0.' },
+    },
+  },
+  {
+    concept: 'Broken Factorial',
+    description: 'The factorial function always returns 0. Fix the base case.',
+    errorType: 'Logic', difficulty: 'medium', xp: 80,
+    variants: {
+      Python:     { lines: ['def factorial(n):','  if n == 0:','    return 0','  return n * factorial(n - 1)','print(factorial(5))'], bugLine:2, fixed:'    return 1', expectedOutput:'120', hint:'0! = 1, not 0. Fix the base case return value.' },
+      JavaScript: { lines: ['function factorial(n) {','  if (n === 0) return 0;','  return n * factorial(n - 1);','}','console.log(factorial(5));'], bugLine:1, fixed:'  if (n === 0) return 1;', expectedOutput:'120', hint:'What is the mathematical value of 0!?' },
+      Java:       { lines: ['public class Main {','    static int factorial(int n) {','        if (n == 0) return 0;','        return n * factorial(n - 1);','    }','    public static void main(String[] args) {','        System.out.println(factorial(5));','    }','}'], bugLine:2, fixed:'        if (n == 0) return 1;', expectedOutput:'120', hint:'The base case should return 1, not 0.' },
+      C:          { lines: ['#include <stdio.h>','int factorial(int n) {','    if (n == 0) return 0;','    return n * factorial(n - 1);','}','int main() {','    printf("%d", factorial(5));','    return 0;','}'], bugLine:2, fixed:'    if (n == 0) return 1;', expectedOutput:'120', hint:'0! equals 1 mathematically.' },
+      'C++':      { lines: ['#include <iostream>','int factorial(int n) {','    if (n == 0) return 0;','    return n * factorial(n - 1);','}','int main() {','    std::cout << factorial(5);','    return 0;','}'], bugLine:2, fixed:'    if (n == 0) return 1;', expectedOutput:'120', hint:'Base case of recursion should return 1.' },
+      HTML:       { lines: ['<ol>','  <il>Step 1</il>','  <il>Step 2</il>','  <il>Step 3</il>','</ol>'], bugLine:1, fixed:'  <li>Step 1</li>', expectedOutput:'Step 1\nStep 2\nStep 3', hint:'The list item tag is <li>, not <il>.' },
+      CSS:        { lines: ['.box {','  width: 100px','  height: 100px;','  background: red;','}'], bugLine:1, fixed:'  width: 100px;', expectedOutput:'width: 100px; height: 100px; background: red;', hint:'Missing semicolon after width value.' },
+    },
+  },
+  {
+    concept: 'Missing Null Check',
+    description: 'The code crashes when the value is null. Add a proper null check.',
+    errorType: 'Runtime', difficulty: 'easy', xp: 60,
+    variants: {
+      Python:     { lines: ['def get_length(s):','  return len(s)','print(get_length(None))'], bugLine:1, fixed:'  return len(s) if s is not None else 0', expectedOutput:'0', hint:'Check if s is None before calling len().' },
+      JavaScript: { lines: ['function getLength(s) {','  return s.length;','}','console.log(getLength(null));'], bugLine:1, fixed:'  return s ? s.length : 0;', expectedOutput:'0', hint:'Check if s is truthy before accessing .length.' },
+      Java:       { lines: ['public class Main {','    public static void main(String[] args) {','        String s = null;','        System.out.println(s.length());','    }','}'], bugLine:3, fixed:'        System.out.println(s != null ? s.length() : 0);', expectedOutput:'0', hint:'Check for null before calling methods on an object.' },
+      C:          { lines: ['#include <stdio.h>','#include <string.h>','int main() {','    char *s = NULL;','    printf("%lu", strlen(s));','    return 0;','}'], bugLine:4, fixed:'    printf("%lu", s ? strlen(s) : 0);', expectedOutput:'0', hint:'Check if pointer is NULL before using it.' },
+      'C++':      { lines: ['#include <iostream>','#include <string>','int main() {','    std::string* s = nullptr;','    std::cout << s->length();','    return 0;','}'], bugLine:4, fixed:'    std::cout << (s ? s->length() : 0);', expectedOutput:'0', hint:'Check for nullptr before dereferencing a pointer.' },
+      HTML:       { lines: ['<img src="photo.jpg">','<p>My photo</p>'], bugLine:0, fixed:'<img src="photo.jpg" alt="My photo">', expectedOutput:'<img src="photo.jpg" alt="My photo">', hint:'Images should always have an alt attribute.' },
+      CSS:        { lines: ['.hidden {','  display: none','}'], bugLine:1, fixed:'  display: none;', expectedOutput:'display: none;', hint:'All CSS declarations need a semicolon at the end.' },
+    },
+  },
+  {
+    concept: 'Wrong Comparison Operator',
+    description: 'The condition uses assignment instead of comparison. Fix the operator.',
+    errorType: 'Syntax', difficulty: 'easy', xp: 50,
+    variants: {
+      Python:     { lines: ['x = 10','if x = 10:','  print("equal")'], bugLine:1, fixed:'if x == 10:', expectedOutput:'equal', hint:'= assigns a value. == compares values.' },
+      JavaScript: { lines: ['let x = 10;','if (x = 5) {','  console.log("five");','} else {','  console.log("not five");','}'], bugLine:1, fixed:'if (x === 5) {', expectedOutput:'not five', hint:'= is assignment, === is strict equality in JS.' },
+      Java:       { lines: ['public class Main {','    public static void main(String[] args) {','        int x = 10;','        if (x == 10) {','            System.out.println("equal");','        }','    }','}'], bugLine:3, fixed:'        if (x == 10) {', expectedOutput:'equal', hint:'Use == for comparison, not = which is assignment.' },
+      C:          { lines: ['#include <stdio.h>','int main() {','    int x = 10;','    if (x = 5) {','        printf("five");','    } else {','        printf("not five");','    }','    return 0;','}'], bugLine:3, fixed:'    if (x == 5) {', expectedOutput:'not five', hint:'= assigns inside if. Use == to compare.' },
+      'C++':      { lines: ['#include <iostream>','int main() {','    int x = 10;','    if (x = 5) {','        std::cout << "five";','    } else {','        std::cout << "not five";','    }','    return 0;','}'], bugLine:3, fixed:'    if (x == 5) {', expectedOutput:'not five', hint:'Use == for comparison in C++.' },
+      HTML:       { lines: ['<a href="google.com">Visit Google</a>'], bugLine:0, fixed:'<a href="https://google.com">Visit Google</a>', expectedOutput:'<a href="https://google.com">Visit Google</a>', hint:'URLs need the https:// protocol prefix.' },
+      CSS:        { lines: ['.text {','  font-size = 16px;','}'], bugLine:1, fixed:'  font-size: 16px;', expectedOutput:'font-size: 16px;', hint:'CSS uses : to separate property and value, not =.' },
+    },
+  },
+  {
+    concept: 'Infinite Loop',
+    description: 'This loop never terminates. Fix the condition or increment.',
+    errorType: 'Logic', difficulty: 'medium', xp: 75,
+    variants: {
+      Python:     { lines: ['i = 1','while i < 5:','  print(i)','  i -= 1'], bugLine:3, fixed:'  i += 1', expectedOutput:'1\n2\n3\n4', hint:'The counter is going the wrong direction.' },
+      JavaScript: { lines: ['let i = 1;','while (i < 5) {','  console.log(i);','  i--;','}'], bugLine:3, fixed:'  i++;', expectedOutput:'1\n2\n3\n4', hint:'i-- makes i smaller — use i++ to increment.' },
+      Java:       { lines: ['public class Main {','    public static void main(String[] args) {','        int i = 1;','        while (i < 5) {','            System.out.println(i);','            i--;','        }','    }','}'], bugLine:5, fixed:'            i++;', expectedOutput:'1\n2\n3\n4', hint:'i-- decrements. Use i++ to make progress.' },
+      C:          { lines: ['#include <stdio.h>','int main() {','    int i = 1;','    while (i < 5) {','        printf("%d\\n", i);','        i--;','    }','    return 0;','}'], bugLine:5, fixed:'        i++;', expectedOutput:'1\n2\n3\n4', hint:'Change i-- to i++ to increment the counter.' },
+      'C++':      { lines: ['#include <iostream>','int main() {','    int i = 1;','    while (i < 5) {','        std::cout << i << std::endl;','        i--;','    }','    return 0;','}'], bugLine:5, fixed:'        i++;', expectedOutput:'1\n2\n3\n4', hint:'i-- causes infinite loop. Use i++ instead.' },
+      HTML:       { lines: ['<div>','  <p>Hello<p>','</div>'], bugLine:1, fixed:'  <p>Hello</p>', expectedOutput:'Hello', hint:'The closing tag needs a forward slash: </p>.' },
+      CSS:        { lines: ['.loop {','  animation: spin 1s linear infinite','}'], bugLine:1, fixed:'  animation: spin 1s linear infinite;', expectedOutput:'animation: spin 1s linear infinite;', hint:'Missing semicolon at end of animation property.' },
+    },
+  },
+  {
+    concept: 'String vs Number Bug',
+    description: 'Adding two values gives wrong result due to type mismatch. Fix the types.',
+    errorType: 'Logic', difficulty: 'easy', xp: 55,
+    variants: {
+      Python:     { lines: ['a = "5"','b = "3"','print(a + b)'], bugLine:2, fixed:'print(int(a) + int(b))', expectedOutput:'8', hint:'Convert strings to integers before adding.' },
+      JavaScript: { lines: ['let a = "5";','let b = "3";','console.log(a + b);'], bugLine:2, fixed:'console.log(Number(a) + Number(b));', expectedOutput:'8', hint:'+ with strings does concatenation. Convert to Number first.' },
+      Java:       { lines: ['public class Main {','    public static void main(String[] args) {','        String a = "5";','        String b = "3";','        System.out.println(a + b);','    }','}'], bugLine:4, fixed:'        System.out.println(Integer.parseInt(a) + Integer.parseInt(b));', expectedOutput:'8', hint:'Use Integer.parseInt() to convert String to int.' },
+      C:          { lines: ['#include <stdio.h>','#include <stdlib.h>','int main() {','    char a[] = "5";','    char b[] = "3";','    printf("%d", atoi(a) + atoi(b));','    return 0;','}'], bugLine:5, fixed:'    printf("%d", atoi(a) + atoi(b));', expectedOutput:'8', hint:'Use atoi() to convert char array to integer.' },
+      'C++':      { lines: ['#include <iostream>','#include <string>','int main() {','    std::string a = "5";','    std::string b = "3";','    std::cout << a + b;','    return 0;','}'], bugLine:5, fixed:'    std::cout << std::stoi(a) + std::stoi(b);', expectedOutput:'8', hint:'Use std::stoi() to convert string to integer.' },
+      HTML:       { lines: ['<h1>Hello World</h2>'], bugLine:0, fixed:'<h1>Hello World</h1>', expectedOutput:'Hello World', hint:'Opening and closing tags must match: <h1> needs </h1>.' },
+      CSS:        { lines: ['.box {','  colour: red;','}'], bugLine:1, fixed:'  color: red;', expectedOutput:'color: red;', hint:'The correct CSS property is color, not colour.' },
+    },
+  },
+  {
+    concept: 'Division by Zero',
+    description: 'The program crashes when dividing. Add a check to prevent division by zero.',
+    errorType: 'Runtime', difficulty: 'easy', xp: 55,
+    variants: {
+      Python:     { lines: ['def divide(a, b):','  return a / b','print(divide(10, 0))'], bugLine:1, fixed:'  return a / b if b != 0 else "Error"', expectedOutput:'Error', hint:'Check if b is zero before dividing.' },
+      JavaScript: { lines: ['function divide(a, b) {','  return a / b;','}','console.log(divide(10, 0));'], bugLine:1, fixed:'  return b !== 0 ? a / b : "Error";', expectedOutput:'Error', hint:'Check if b is 0 before performing division.' },
+      Java:       { lines: ['public class Main {','    public static void main(String[] args) {','        int a = 10, b = 0;','        System.out.println(a / b);','    }','}'], bugLine:3, fixed:'        System.out.println(b != 0 ? a / b : "Error");', expectedOutput:'Error', hint:'Always check divisor is non-zero before dividing.' },
+      C:          { lines: ['#include <stdio.h>','int main() {','    int a = 10, b = 0;','    printf("%d", a / b);','    return 0;','}'], bugLine:3, fixed:'    if (b != 0) printf("%d", a/b); else printf("Error");', expectedOutput:'Error', hint:'Check b != 0 before dividing.' },
+      'C++':      { lines: ['#include <iostream>','int main() {','    int a = 10, b = 0;','    std::cout << a / b;','    return 0;','}'], bugLine:3, fixed:'    std::cout << (b != 0 ? a / b : -1);', expectedOutput:'-1', hint:'Guard against division by zero with a condition.' },
+      HTML:       { lines: ['<button onclick="alert(clicked)">Click me</button>'], bugLine:0, fixed:'<button onclick="alert(\'clicked\')">Click me</button>', expectedOutput:'alert fires correctly', hint:'String argument to alert() needs quotes.' },
+      CSS:        { lines: ['.center {','  margin: auto','  text-align: center;','}'], bugLine:1, fixed:'  margin: auto;', expectedOutput:'margin: auto; text-align: center;', hint:'Missing semicolon after margin: auto.' },
+    },
+  },
+];
+
+// Pick today's daily problem (rotates daily)
 const DAILY_CHALLENGE = (() => {
   const today = new Date();
   const seed =
     today.getFullYear() * 10000 +
     (today.getMonth() + 1) * 100 +
     today.getDate();
-  return CHALLENGES[seed % CHALLENGES.length];
+  return DAILY_PROBLEMS[seed % DAILY_PROBLEMS.length];
 })();
 
 const USERS_LB = [
@@ -1620,58 +1730,166 @@ const LANG_PATHS = [
       { e: "💎", s: "locked" },
     ],
   },
-  {
-    lang: "C",
-    icon: "🔵",
-    levels: [
-      { e: "🐣", s: "active" },
-      { e: "🔍", s: "locked" },
-      { e: "⚡", s: "locked" },
-      { e: "🔥", s: "locked" },
-      { e: "🏆", s: "locked" },
-    ],
-  },
-  {
-    lang: "C++",
-    icon: "🟣",
-    levels: [
-      { e: "🌱", s: "active" },
-      { e: "🔗", s: "locked" },
-      { e: "🧩", s: "locked" },
-      { e: "🚀", s: "locked" },
-      { e: "💎", s: "locked" },
-    ],
-  },
-  {
-    lang: "HTML",
-    icon: "🌐",
-    levels: [
-      { e: "🐣", s: "active" },
-      { e: "🔍", s: "locked" },
-      { e: "⚡", s: "locked" },
-      { e: "🔥", s: "locked" },
-      { e: "🏆", s: "locked" },
-    ],
-  },
-  {
-    lang: "CSS",
-    icon: "🎨",
-    levels: [
-      { e: "🌱", s: "active" },
-      { e: "🔀", s: "locked" },
-      { e: "🕵️", s: "locked" },
-      { e: "🚀", s: "locked" },
-      { e: "🏆", s: "locked" },
-    ],
-  },
 ];
+
 const BADGES = [
-  { icon: "🔥", label: "7-Day Streak" },
-  { icon: "⚡", label: "Speed Debugger" },
-  { icon: "🐍", label: "Python Pro" },
-  { icon: "🏆", label: "Top 10" },
-  { icon: "💡", label: "Hint-less" },
-  { icon: "🌟", label: "50 Solves" },
+  {
+    id: "streak_3",
+    icon: "🔥",
+    label: "On Fire",
+    desc: "Maintain a 3-day streak",
+    check: (u) => (u.streak || 0) >= 3,
+  },
+  {
+    id: "streak_7",
+    icon: "🌋",
+    label: "7-Day Streak",
+    desc: "Maintain a 7-day streak",
+    check: (u) => (u.streak || 0) >= 7,
+  },
+  {
+    id: "streak_30",
+    icon: "💎",
+    label: "Unstoppable",
+    desc: "Maintain a 30-day streak",
+    check: (u) => (u.streak || 0) >= 30,
+  },
+  {
+    id: "first_solve",
+    icon: "🐣",
+    label: "First Bug Fixed",
+    desc: "Solve your first challenge",
+    check: (u) => (u.solved || 0) >= 1,
+  },
+  {
+    id: "solve_10",
+    icon: "🌟",
+    label: "Bug Hunter",
+    desc: "Solve 10 challenges",
+    check: (u) => (u.solved || 0) >= 10,
+  },
+  {
+    id: "solve_25",
+    icon: "🏅",
+    label: "Debugger",
+    desc: "Solve 25 challenges",
+    check: (u) => (u.solved || 0) >= 25,
+  },
+  {
+    id: "solve_50",
+    icon: "🏆",
+    label: "Elite Debugger",
+    desc: "Solve 50 challenges",
+    check: (u) => (u.solved || 0) >= 50,
+  },
+  {
+    id: "python_3",
+    icon: "🐍",
+    label: "Python Rookie",
+    desc: "Solve 3 Python challenges",
+    check: (u, langCounts) => (langCounts["Python"] || 0) >= 3,
+  },
+  {
+    id: "python_pro",
+    icon: "🐍",
+    label: "Python Pro",
+    desc: "Solve all 10 Python challenges",
+    check: (u, langCounts) => (langCounts["Python"] || 0) >= 10,
+  },
+  {
+    id: "js_3",
+    icon: "💛",
+    label: "JS Rookie",
+    desc: "Solve 3 JavaScript challenges",
+    check: (u, langCounts) => (langCounts["JavaScript"] || 0) >= 3,
+  },
+  {
+    id: "js_pro",
+    icon: "💛",
+    label: "JS Pro",
+    desc: "Solve all 10 JavaScript challenges",
+    check: (u, langCounts) => (langCounts["JavaScript"] || 0) >= 10,
+  },
+  {
+    id: "java_3",
+    icon: "☕",
+    label: "Java Rookie",
+    desc: "Solve 3 Java challenges",
+    check: (u, langCounts) => (langCounts["Java"] || 0) >= 3,
+  },
+  {
+    id: "java_pro",
+    icon: "☕",
+    label: "Java Pro",
+    desc: "Solve all 10 Java challenges",
+    check: (u, langCounts) => (langCounts["Java"] || 0) >= 10,
+  },
+  {
+    id: "c_pro",
+    icon: "⚙️",
+    label: "C Master",
+    desc: "Solve all 10 C challenges",
+    check: (u, langCounts) => (langCounts["C"] || 0) >= 10,
+  },
+  {
+    id: "cpp_pro",
+    icon: "🔷",
+    label: "C++ Master",
+    desc: "Solve all 10 C++ challenges",
+    check: (u, langCounts) => (langCounts["C++"] || 0) >= 10,
+  },
+  {
+    id: "html_pro",
+    icon: "🌐",
+    label: "HTML Master",
+    desc: "Solve all 10 HTML challenges",
+    check: (u, langCounts) => (langCounts["HTML"] || 0) >= 10,
+  },
+  {
+    id: "css_pro",
+    icon: "🎨",
+    label: "CSS Master",
+    desc: "Solve all 10 CSS challenges",
+    check: (u, langCounts) => (langCounts["CSS"] || 0) >= 10,
+  },
+  {
+    id: "polyglot",
+    icon: "🌍",
+    label: "Polyglot",
+    desc: "Solve at least 1 challenge in every language",
+    check: (u, langCounts) =>
+      ["Python","JavaScript","Java","C","C++","HTML","CSS"].every(
+        (l) => (langCounts[l] || 0) >= 1
+      ),
+  },
+  {
+    id: "xp_500",
+    icon: "⚡",
+    label: "XP Grinder",
+    desc: "Earn 500 XP",
+    check: (u) => (u.xp || 0) >= 500,
+  },
+  {
+    id: "xp_2000",
+    icon: "🚀",
+    label: "XP Legend",
+    desc: "Earn 2000 XP",
+    check: (u) => (u.xp || 0) >= 2000,
+  },
+  {
+    id: "daily_1",
+    icon: "📅",
+    label: "Daily Debugger",
+    desc: "Complete your first daily challenge",
+    check: (u) => !!u.lastDailyDate,
+  },
+  {
+    id: "hintless",
+    icon: "💡",
+    label: "Hint-less",
+    desc: "Solve 5 challenges without using a hint",
+    check: (u) => (u.hintlessSolves || 0) >= 5,
+  },
 ];
 
 const DEV_QUEUE = [
@@ -2206,8 +2424,7 @@ function Auth({ mode, go, setUser }) {
           createdAt: serverTimestamp(),
         };
         await setDoc(doc(db, "users", cred.user.uid), newUserData);
-        setUser(newUserData);
-        go("dashboard");
+        // onAuthStateChanged will handle navigation
       } else {
         const cred = await signInWithEmailAndPassword(auth, email, pass);
         const userDoc = await getDoc(doc(db, "users", cred.user.uid));
@@ -2230,7 +2447,7 @@ function Auth({ mode, go, setUser }) {
           await setDoc(doc(db, "users", cred.user.uid), fallbackData);
           setUser(fallbackData);
         }
-        go("dashboard");
+        // onAuthStateChanged will handle navigation
       }
     } catch (error) {
       if (error.code === "auth/email-already-in-use")
@@ -2256,10 +2473,10 @@ function Auth({ mode, go, setUser }) {
     try {
       const provider = new GoogleAuthProvider();
       const cred = await signInWithPopup(auth, provider);
+      // Ensure the user doc exists in Firestore; onAuthStateChanged will
+      // pick up the signed-in user and navigate to dashboard automatically.
       const userDoc = await getDoc(doc(db, "users", cred.user.uid));
-      if (userDoc.exists()) {
-        setUser({ ...userDoc.data(), uid: cred.user.uid });
-      } else {
+      if (!userDoc.exists()) {
         const newUserData = {
           name: cred.user.displayName || cred.user.email.split("@")[0],
           email: cred.user.email,
@@ -2274,9 +2491,9 @@ function Auth({ mode, go, setUser }) {
           createdAt: serverTimestamp(),
         };
         await setDoc(doc(db, "users", cred.user.uid), newUserData);
-        setUser(newUserData);
       }
-      go("dashboard");
+      // Do NOT call go("dashboard") here — user state is async.
+      // onAuthStateChanged below will set user + navigate once state is ready.
     } catch (error) {
       setErr("Google sign-in failed. Try again.");
     }
@@ -2553,6 +2770,7 @@ function Auth({ mode, go, setUser }) {
 /* ══ DASHBOARD ══ */
 function Dashboard({ user, go, pickChallenge }) {
   const [filter, setFilter] = useState("All");
+  const [extraChallenges, setExtraChallenges] = useState([]);
   const langs = [
     "All",
     "Python",
@@ -2563,8 +2781,29 @@ function Dashboard({ user, go, pickChallenge }) {
     "HTML",
     "CSS",
   ];
+
+  // Load admin-uploaded challenges from Firestore
+  useEffect(() => {
+    async function loadFirestoreChallenges() {
+      try {
+        const snap = await getDocs(query(collection(db, "challenges"), orderBy("createdAt", "desc")));
+        const firestoreChallenges = snap.docs.map((d, i) => ({
+          id: d.id,
+          ...d.data(),
+          // ensure lines is array
+          lines: d.data().lines || [],
+        }));
+        setExtraChallenges(firestoreChallenges);
+      } catch (e) {
+        console.error("Failed to load Firestore challenges:", e);
+      }
+    }
+    loadFirestoreChallenges();
+  }, []);
+
+  const allChallenges = [...CHALLENGES, ...extraChallenges];
   const shown =
-    filter === "All" ? CHALLENGES : CHALLENGES.filter((c) => c.lang === filter);
+    filter === "All" ? allChallenges : allChallenges.filter((c) => c.lang === filter);
 
   return (
     <div
@@ -2642,7 +2881,7 @@ function Dashboard({ user, go, pickChallenge }) {
       </div>
 
       {/* ⚡ DAILY CHALLENGE CARD */}
-      <DailyChallenge go={go} pickChallenge={pickChallenge} />
+      <DailyChallenge go={go} pickChallenge={pickChallenge} user={user} />
 
       {/* XP Progress */}
       <div className="card" style={{ marginBottom: 28, padding: 20 }}>
@@ -2809,7 +3048,9 @@ function ChallengePage({ challenge, go, setUser, user }) {
   function applyFix() {
     if (selLine === null) return;
     const u = [...lines];
-    u[selLine] = editVal;
+    // Support multi-line fixes: split on newline and splice in
+    const fixLines = editVal.split("\n");
+    u.splice(selLine, 1, ...fixLines);
     setLines(u);
     setEditing(false);
     setOutput(null);
@@ -2911,16 +3152,19 @@ function ChallengePage({ challenge, go, setUser, user }) {
     const yesterday = new Date(Date.now() - 86400000).toDateString();
     let newStreak = 1;
     if (user.lastSolvedDate === today) {
-      newStreak = user.streak;
+      newStreak = user.streak; // already solved today, keep streak
     } else if (user.lastSolvedDate === yesterday) {
-      newStreak = user.streak + 1;
+      newStreak = user.streak + 1; // consecutive day
     } else {
-      newStreak = 1;
+      newStreak = 1; // streak broken
     }
 
     const alreadySolved = (user.solvedChallenges || []).includes(challenge.id);
     const xpGained = alreadySolved ? 0 : challenge.xp;
     const solvedInc = alreadySolved ? 0 : 1;
+
+    // If this is a daily challenge, mark lastDailyDate so they can't redo it today
+    const isDailyDone = challenge.isDailyChallenge ? { lastDailyDate: today } : {};
 
     const updates = {
       xp: user.xp + xpGained,
@@ -2930,8 +3174,10 @@ function ChallengePage({ challenge, go, setUser, user }) {
       solvedChallenges: alreadySolved
         ? user.solvedChallenges
         : [...(user.solvedChallenges || []), challenge.id],
+      ...isDailyDone,
     };
 
+    // Persist to Firestore
     try {
       await updateDoc(doc(db, "users", user.uid), updates);
     } catch (e) {
@@ -2939,7 +3185,6 @@ function ChallengePage({ challenge, go, setUser, user }) {
     }
 
     setUser((u) => ({ ...u, ...updates }));
-    if (challenge.onComplete) challenge.onComplete();
   }
 
   // Timer color: green → orange → red
@@ -3170,7 +3415,7 @@ function ChallengePage({ challenge, go, setUser, user }) {
               <textarea
                 value={editVal}
                 onChange={(e) => setEditVal(e.target.value)}
-                rows={3}
+                rows={Math.max(2, editVal.split("\n").length + 1)}
                 style={{
                   width: "100%",
                   background: "var(--bg)",
@@ -3181,6 +3426,9 @@ function ChallengePage({ challenge, go, setUser, user }) {
                   fontFamily: "var(--mono)",
                   fontSize: 13,
                   resize: "vertical",
+                  whiteSpace: "pre",
+                  overflowWrap: "normal",
+                  overflowX: "auto",
                 }}
               />
               <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
@@ -3354,7 +3602,6 @@ function ChallengePage({ challenge, go, setUser, user }) {
   );
 }
 
-/* ══ LEVELS ══ */
 /* ══ LEVELS ══ */
 function Levels({ go, pickChallenge, devChallenges }) {
   const [sel, setSel] = useState(null); // selected language
@@ -3964,12 +4211,11 @@ function Leaderboard() {
   const [lbUsers, setLbUsers] = useState(USERS_LB);
   const medals = ["🥇", "🥈", "🥉"];
 
+  // Load real users from Firestore
   useEffect(() => {
     async function loadUsers() {
       try {
-        const snap = await getDocs(
-          query(collection(db, "users"), orderBy("xp", "desc"))
-        );
+        const snap = await getDocs(query(collection(db, "users"), orderBy("xp", "desc")));
         const realUsers = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
         if (realUsers.length > 0) setLbUsers(realUsers);
       } catch (e) {
@@ -4094,57 +4340,111 @@ function Leaderboard() {
 /* ══ DISCUSS ══ */
 function Discuss({ user }) {
   const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState("");
   const [commenting, setCommenting] = useState(null);
   const [commentVal, setCommentVal] = useState("");
   const [groupModal, setGroupModal] = useState(null);
 
+  // Load posts from Firestore in real-time order
   useEffect(() => {
-    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const list = await Promise.all(
-        snapshot.docs.map(async (docSnap) => {
-          const data = docSnap.data();
-          const commentsSnap = await getDocs(
-            collection(db, "posts", docSnap.id, "comments")
-          );
-          const comments = commentsSnap.docs.map((c) => c.data());
-          return { id: docSnap.id, ...data, comments: comments || [] };
-        })
-      );
-      setPosts(list);
-    });
-    return () => unsubscribe();
+    async function loadPosts() {
+      try {
+        const snap = await getDocs(query(collection(db, "posts"), orderBy("createdAt", "desc")));
+        const firestorePosts = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setPosts(firestorePosts.length > 0 ? firestorePosts : INIT_POSTS);
+      } catch (e) {
+        console.error("Load posts error:", e);
+        setPosts(INIT_POSTS);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadPosts();
   }, []);
 
   async function addPost() {
     if (!newPost.trim()) return;
-    await addDoc(collection(db, "posts"), {
-      text: newPost,
+    const postData = {
       author: user.name,
-      avatar: user.avatar,
-      userId: user.uid,
+      avatar: user.avatar || "🚀",
+      uid: user.uid,
+      time: "just now",
+      text: newPost,
       likes: 0,
-      createdAt: serverTimestamp(),
-    });
+      likedBy: [],
+      comments: [],
+      createdAt: new Date().toISOString(),
+    };
+    try {
+      const ref = await addDoc(collection(db, "posts"), postData);
+      setPosts((p) => [{ ...postData, id: ref.id }, ...p]);
+    } catch (e) {
+      console.error("Post save error:", e);
+      setPosts((p) => [{ ...postData, id: Date.now() }, ...p]);
+    }
     setNewPost("");
   }
 
-  async function likePost(post) {
-    if (post.likedBy?.includes(user.uid)) return;
-    await updateDoc(doc(db, "posts", post.id), {
-      likes: (post.likes || 0) + 1,
-      likedBy: [...(post.likedBy || []), user.uid],
-    });
+  async function like(id) {
+    const alreadyLiked = posts.find(p => p.id === id)?.likedBy?.includes(user.uid);
+    setPosts((p) =>
+      p.map((post) =>
+        post.id === id
+          ? {
+              ...post,
+              likes: alreadyLiked ? post.likes - 1 : post.likes + 1,
+              likedBy: alreadyLiked
+                ? (post.likedBy || []).filter(u => u !== user.uid)
+                : [...(post.likedBy || []), user.uid],
+            }
+          : post
+      )
+    );
+    try {
+      const postRef = doc(db, "posts", String(id));
+      const snap = await getDoc(postRef);
+      if (snap.exists()) {
+        const likedBy = snap.data().likedBy || [];
+        if (likedBy.includes(user.uid)) {
+          await updateDoc(postRef, {
+            likes: snap.data().likes - 1,
+            likedBy: likedBy.filter(u => u !== user.uid),
+          });
+        } else {
+          await updateDoc(postRef, {
+            likes: snap.data().likes + 1,
+            likedBy: [...likedBy, user.uid],
+          });
+        }
+      }
+    } catch (e) { console.error("Like error:", e); }
   }
-
-  async function addComment(postId) {
+  async function addComment(id) {
     if (!commentVal.trim()) return;
-    await addDoc(collection(db, "posts", postId, "comments"), {
-      text: commentVal,
+    const newComment = {
       author: user.name,
-      createdAt: serverTimestamp(),
-    });
+      avatar: user.avatar || "💬",
+      uid: user.uid,
+      text: commentVal,
+      createdAt: new Date().toISOString(),
+    };
+    // Save to Firestore
+    try {
+      const postRef = doc(db, "posts", String(id));
+      const postSnap = await getDoc(postRef);
+      if (postSnap.exists()) {
+        const existing = postSnap.data().comments || [];
+        await updateDoc(postRef, { comments: [...existing, newComment] });
+      }
+    } catch (e) { console.error("Comment save error:", e); }
+    setPosts((p) =>
+      p.map((post) =>
+        post.id === id
+          ? { ...post, comments: [...(post.comments || []), newComment] }
+          : post
+      )
+    );
     setCommentVal("");
     setCommenting(null);
   }
@@ -4243,6 +4543,16 @@ function Discuss({ user }) {
           </button>
         </div>
       </div>
+      {loading && (
+        <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontWeight: 700 }}>
+          Loading posts... ⏳
+        </div>
+      )}
+      {!loading && posts.length === 0 && (
+        <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontWeight: 700 }}>
+          No posts yet. Be the first to share! 🚀
+        </div>
+      )}
       {posts.map((post) => (
         <div key={post.id} className="post">
           <div
@@ -4269,7 +4579,7 @@ function Discuss({ user }) {
               <div
                 style={{ color: "var(--muted)", fontSize: 12, fontWeight: 600 }}
               >
-                {post.time || "just now"}
+                {post.time}
               </div>
             </div>
           </div>
@@ -4286,19 +4596,21 @@ function Discuss({ user }) {
           <div style={{ display: "flex", gap: 10 }}>
             <button
               style={{
-                background: "rgba(255,75,203,.1)",
+                background: post.likedBy?.includes(user.uid)
+                  ? "rgba(255,75,203,.25)" : "rgba(255,75,203,.1)",
                 color: "var(--pink)",
-                border: "1px solid rgba(255,75,203,.2)",
+                border: post.likedBy?.includes(user.uid)
+                  ? "1px solid rgba(255,75,203,.6)" : "1px solid rgba(255,75,203,.2)",
                 borderRadius: 50,
                 padding: "6px 14px",
                 fontSize: 13,
                 fontWeight: 700,
-                opacity: post.likedBy?.includes(user.uid) ? 0.5 : 1,
+                transform: post.likedBy?.includes(user.uid) ? "scale(1.05)" : "scale(1)",
+                transition: "all .2s",
               }}
-              onClick={() => likePost(post)}
-              disabled={post.likedBy?.includes(user.uid)}
+              onClick={() => like(post.id)}
             >
-              ❤️ {post.likes || 0}
+              {post.likedBy?.includes(user.uid) ? "❤️" : "🤍"} {post.likes}
             </button>
             <button
               style={{
@@ -4332,21 +4644,24 @@ function Discuss({ user }) {
                 >
                   <div
                     style={{
-                      width: 28,
-                      height: 28,
+                      width: 32,
+                      height: 32,
                       borderRadius: "50%",
                       background: "var(--card2)",
+                      border: "1.5px solid var(--border)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: 13,
+                      fontSize: 16,
+                      flexShrink: 0,
                     }}
                   >
-                    💬
+                    {c.avatar || "💬"}
                   </div>
                   <div
                     style={{
                       background: "var(--card2)",
+                      border: "1px solid var(--border)",
                       borderRadius: 10,
                       padding: "8px 12px",
                       flex: 1,
@@ -4356,13 +4671,29 @@ function Discuss({ user }) {
                       style={{
                         fontWeight: 800,
                         fontSize: 12,
-                        color: "var(--lime)",
-                        marginBottom: 2,
+                        color: "var(--text)",
+                        marginBottom: 3,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
                       }}
                     >
-                      {c.author}
+                      <span style={{
+                        background: "linear-gradient(90deg,var(--cyan),var(--purple))",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        fontWeight: 900,
+                      }}>
+                        {c.author}
+                      </span>
+                      {c.createdAt && (
+                        <span style={{ color: "var(--muted)", fontWeight: 600, fontSize: 11,
+                          WebkitTextFillColor: "var(--muted)" }}>
+                          · {new Date(c.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      )}
                     </div>
-                    <div style={{ fontSize: 13, color: "var(--muted)" }}>
+                    <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5 }}>
                       {c.text}
                     </div>
                   </div>
@@ -4407,6 +4738,7 @@ function Profile({ user, setUser, onUpload }) {
   const [uploads, setUploads] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [badgeFilter, setBadgeFilter] = useState("all");
   const [form, setForm] = useState({
     title: "",
     lang: "Python",
@@ -4419,6 +4751,54 @@ function Profile({ user, setUser, onUpload }) {
     expectedOutput: "",
   });
   const canUpload = true;
+
+  // Compute per-language solve counts from user's solvedChallenges array
+  const langCounts = {};
+  (user.solvedChallenges || []).forEach((id) => {
+    const ch = CHALLENGES.find((c) => String(c.id) === String(id));
+    // Also handle daily challenge IDs like "daily_Sat Apr 25 2026_Python"
+    if (!ch && String(id).startsWith('daily_')) {
+      const parts = String(id).split('_');
+      const lang = parts[parts.length - 1];
+      if (lang) langCounts[lang] = (langCounts[lang] || 0) + 1;
+      return;
+    }
+    if (ch) langCounts[ch.lang] = (langCounts[ch.lang] || 0) + 1;
+  });
+
+  // Compute badge progress values for rendering
+  function getBadgeProgress(b) {
+    if (b.id.startsWith("streak_")) {
+      const target = parseInt(b.id.split("_")[1]);
+      return { current: Math.min(user.streak || 0, target), target, type: "streak" };
+    }
+    if (b.id === "first_solve") return { current: Math.min(user.solved || 0, 1), target: 1, type: "solve" };
+    if (b.id === "solve_10") return { current: Math.min(user.solved || 0, 10), target: 10, type: "solve" };
+    if (b.id === "solve_25") return { current: Math.min(user.solved || 0, 25), target: 25, type: "solve" };
+    if (b.id === "solve_50") return { current: Math.min(user.solved || 0, 50), target: 50, type: "solve" };
+    if (b.id === "xp_500") return { current: Math.min(user.xp || 0, 500), target: 500, type: "xp" };
+    if (b.id === "xp_2000") return { current: Math.min(user.xp || 0, 2000), target: 2000, type: "xp" };
+    if (b.id === "hintless") return { current: Math.min(user.hintlessSolves || 0, 5), target: 5, type: "solve" };
+    if (b.id === "daily_1") return { current: user.lastDailyDate ? 1 : 0, target: 1, type: "daily" };
+    if (b.id === "polyglot") {
+      const langs = ["Python","JavaScript","Java","C","C++","HTML","CSS"];
+      const done = langs.filter(l => (langCounts[l] || 0) >= 1).length;
+      return { current: done, target: langs.length, type: "lang" };
+    }
+    // Language-specific badges
+    const langMap = {
+      python_3: ["Python", 3], python_pro: ["Python", 10],
+      js_3: ["JavaScript", 3], js_pro: ["JavaScript", 10],
+      java_3: ["Java", 3], java_pro: ["Java", 10],
+      c_pro: ["C", 10], cpp_pro: ["C++", 10],
+      html_pro: ["HTML", 10], css_pro: ["CSS", 10],
+    };
+    if (langMap[b.id]) {
+      const [lang, target] = langMap[b.id];
+      return { current: Math.min(langCounts[lang] || 0, target), target, type: "lang" };
+    }
+    return { current: 0, target: 1, type: "other" };
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -4446,12 +4826,7 @@ function Profile({ user, setUser, onUpload }) {
         ...newUpload,
         lines: newUpload.code.split("\n"),
         description: newUpload.hint,
-        xp:
-          newUpload.difficulty === "easy"
-            ? 50
-            : newUpload.difficulty === "medium"
-            ? 80
-            : 120,
+        xp: newUpload.difficulty === "easy" ? 50 : newUpload.difficulty === "medium" ? 80 : 120,
         createdAt: serverTimestamp(),
       });
     } catch (err) {
@@ -4462,242 +4837,243 @@ function Profile({ user, setUser, onUpload }) {
         ...newUpload,
         lines: newUpload.code.split("\n"),
         description: newUpload.hint,
-        xp:
-          newUpload.difficulty === "easy"
-            ? 50
-            : newUpload.difficulty === "medium"
-            ? 80
-            : 120,
+        xp: newUpload.difficulty === "easy" ? 50 : newUpload.difficulty === "medium" ? 80 : 120,
       });
-    setForm({
-      title: "",
-      lang: "Python",
-      difficulty: "easy",
-      errorType: "Syntax",
-      code: "",
-      bugLine: "",
-      fixed: "",
-      hint: "",
-      expectedOutput: "",
-    });
+    setForm({ title: "", lang: "Python", difficulty: "easy", errorType: "Syntax", code: "", bugLine: "", fixed: "", hint: "", expectedOutput: "" });
     setShowForm(false);
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 4000);
   }
+
+  // Compute level from XP
+  const xpPerLevel = 500;
+  const currentLevel = Math.floor((user.xp || 0) / xpPerLevel) + 1;
+  const xpIntoLevel = (user.xp || 0) % xpPerLevel;
+  const earnedBadges = BADGES.filter(b => b.check(user, langCounts));
+  const allLangs = ["Python","JavaScript","Java","C","C++","HTML","CSS"];
+  const langIcons = { Python:"🐍", JavaScript:"💛", Java:"☕", C:"⚙️", "C++":"🔷", HTML:"🌐", CSS:"🎨" };
+
+  const badgeCategories = [
+    { key: "all", label: "All" },
+    { key: "streak", label: "🔥 Streaks" },
+    { key: "solve", label: "🐛 Solving" },
+    { key: "lang", label: "🌐 Languages" },
+    { key: "xp", label: "⚡ XP" },
+    { key: "special", label: "⭐ Special" },
+  ];
+
+  function getBadgeCategory(b) {
+    if (b.id.startsWith("streak_")) return "streak";
+    if (["first_solve","solve_10","solve_25","solve_50","hintless"].includes(b.id)) return "solve";
+    if (["python_3","python_pro","js_3","js_pro","java_3","java_pro","c_pro","cpp_pro","html_pro","css_pro","polyglot"].includes(b.id)) return "lang";
+    if (b.id.startsWith("xp_")) return "xp";
+    return "special";
+  }
+
+  const filteredBadges = badgeFilter === "all" ? BADGES : BADGES.filter(b => getBadgeCategory(b) === badgeFilter);
+
   return (
-    <div
-      className="page"
-      style={{
-        paddingTop: 90,
-        padding: "90px 24px 60px",
-        maxWidth: 800,
-        margin: "0 auto",
-      }}
-    >
-      <div
-        className="card"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 24,
-          marginBottom: 22,
-          flexWrap: "wrap",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          className="glow"
-          style={{
-            width: 300,
-            height: 200,
-            background: "var(--lime)",
-            top: "-50%",
-            right: "-5%",
-          }}
-        />
-        <Av emoji={user.avatar} size={80} />
-        <div style={{ flex: 1, position: "relative", zIndex: 1 }}>
-          <div
-            style={{
-              fontFamily: "var(--display)",
-              fontSize: 30,
-              marginBottom: 4,
-            }}
-          >
-            {user.name}
-          </div>
-          <div
-            style={{
-              color: "var(--muted)",
-              fontSize: 13,
-              fontWeight: 600,
-              marginBottom: 12,
-            }}
-          >
-            {user.email}
-          </div>
-          <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-            <div>
-              <span
-                style={{
-                  fontFamily: "var(--display)",
-                  fontSize: 22,
-                  color: "var(--lime)",
-                }}
-              >
-                {user.xp.toLocaleString()}
-              </span>
-              <span
-                style={{
-                  color: "var(--muted)",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  marginLeft: 4,
-                }}
-              >
-                XP
-              </span>
-            </div>
-            <div>
-              <span style={{ fontSize: 16 }}>🔥</span>
-              <span
-                style={{
-                  fontFamily: "var(--display)",
-                  fontSize: 22,
-                  color: "var(--orange)",
-                }}
-              >
-                {user.streak}
-              </span>
-              <span
-                style={{
-                  color: "var(--muted)",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  marginLeft: 4,
-                }}
-              >
-                STREAK
-              </span>
-            </div>
-            <div>
-              <span
-                style={{
-                  fontFamily: "var(--display)",
-                  fontSize: 22,
-                  color: "var(--cyan)",
-                }}
-              >
-                {user.solved}
-              </span>
-              <span
-                style={{
-                  color: "var(--muted)",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  marginLeft: 4,
-                }}
-              >
-                SOLVED
-              </span>
-            </div>
-          </div>
+    <div className="page" style={{ paddingTop: 90, padding: "90px 24px 60px", maxWidth: 860, margin: "0 auto" }}>
+
+      {/* ── HERO CARD ── */}
+      <div className="card" style={{ marginBottom: 20, position: "relative", overflow: "hidden", padding: 0 }}>
+        {/* Banner gradient */}
+        <div style={{ height: 80, background: "linear-gradient(135deg,rgba(200,241,53,0.3),rgba(0,229,255,0.2),rgba(168,85,247,0.2))", position: "relative" }}>
+          <div className="glow" style={{ width: 300, height: 200, background: "var(--lime)", top: "-80%", right: "5%" }} />
         </div>
-      </div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 22 }}>
-        {["stats", "badges", "uploads"].map((t) => (
-          <button
-            key={t}
-            className={`tab${tab === t ? " active" : ""}`}
-            onClick={() => setTab(t)}
-            style={{ textTransform: "capitalize" }}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
-      {tab === "stats" && (
-        <div>
-          <div className="card" style={{ marginBottom: 16 }}>
-            <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 12 }}>
-              📈 Level Progress
+        {/* Avatar + info */}
+        <div style={{ padding: "0 28px 24px", position: "relative" }}>
+          {/* Avatar overlapping banner */}
+          <div style={{ marginTop: -36, marginBottom: 12, display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+            <div style={{ width: 72, height: 72, borderRadius: "50%", background: "var(--card2)", border: "3px solid var(--lime)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, flexShrink: 0 }}>
+              {user.avatar}
             </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: 8,
-              }}
-            >
-              <span
-                style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}
-              >
-                Level 4 → Level 5
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <span style={{ background: "rgba(200,241,53,0.15)", border: "1px solid rgba(200,241,53,0.3)", borderRadius: 50, padding: "4px 14px", fontSize: 12, fontWeight: 800, color: "var(--lime)" }}>
+                ⚡ Level {currentLevel}
               </span>
-              <span style={{ fontSize: 13, fontWeight: 700 }}>
-                {user.xp} / 2000 XP
+              <span style={{ background: "rgba(0,229,255,0.1)", border: "1px solid rgba(0,229,255,0.2)", borderRadius: 50, padding: "4px 14px", fontSize: 12, fontWeight: 800, color: "var(--cyan)" }}>
+                🏅 {earnedBadges.length}/{BADGES.length} Badges
               </span>
-            </div>
-            <div className="xp-bar">
-              <div
-                className="xp-fill"
-                style={{ width: `${(user.xp / 2000) * 100}%` }}
-              />
             </div>
           </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
-              gap: 14,
-            }}
-          >
+          <div style={{ fontFamily: "var(--display)", fontSize: 26, marginBottom: 2 }}>{user.name}</div>
+          <div style={{ color: "var(--muted)", fontSize: 13, fontWeight: 600, marginBottom: 18 }}>{user.email}</div>
+
+          {/* Stats row */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(100px,1fr))", gap: 12 }}>
             {[
-              { l: "Python", v: "8 solved", i: "🐍" },
-              { l: "JavaScript", v: "6 solved", i: "💛" },
-              { l: "Java", v: "4 solved", i: "☕" },
-            ].map((s) => (
-              <div key={s.l} className="card" style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 28, marginBottom: 6 }}>{s.i}</div>
-                <div style={{ fontWeight: 800, fontSize: 15 }}>{s.l}</div>
-                <div
-                  style={{
-                    color: "var(--muted)",
-                    fontSize: 13,
-                    fontWeight: 600,
-                  }}
-                >
-                  {s.v}
-                </div>
+              { icon: "⚡", value: (user.xp || 0).toLocaleString(), label: "Total XP", color: "var(--lime)" },
+              { icon: "🔥", value: user.streak || 0, label: "Day Streak", color: "var(--orange)" },
+              { icon: "✅", value: user.solved || 0, label: "Solved", color: "var(--cyan)" },
+              { icon: "🏅", value: earnedBadges.length, label: "Badges", color: "var(--purple)" },
+            ].map(s => (
+              <div key={s.label} style={{ background: "var(--bg2)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
+                <div style={{ fontSize: 20, marginBottom: 4 }}>{s.icon}</div>
+                <div style={{ fontFamily: "var(--display)", fontSize: 22, color: s.color }}>{s.value}</div>
+                <div style={{ color: "var(--muted)", fontSize: 11, fontWeight: 700, letterSpacing: 0.5 }}>{s.label}</div>
               </div>
             ))}
           </div>
+
+          {/* XP progress bar */}
+          <div style={{ marginTop: 16, padding: "14px 16px", background: "var(--bg2)", borderRadius: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 700 }}>Level {currentLevel} → Level {currentLevel + 1}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--lime)" }}>{xpIntoLevel} / {xpPerLevel} XP</span>
+            </div>
+            <div className="xp-bar">
+              <div className="xp-fill" style={{ width: `${(xpIntoLevel / xpPerLevel) * 100}%` }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── TABS ── */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        {["stats", "badges", "uploads"].map((t) => (
+          <button key={t} className={`tab${tab === t ? " active" : ""}`} onClick={() => setTab(t)} style={{ textTransform: "capitalize" }}>
+            {t === "badges" ? `Badges (${earnedBadges.length}/${BADGES.length})` : t === "stats" ? "Stats" : "Uploads"}
+          </button>
+        ))}
+      </div>
+
+      {/* ── STATS TAB ── */}
+      {tab === "stats" && (
+        <div>
+          {/* Language breakdown */}
+          <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 14, color: "var(--muted)", letterSpacing: 0.5, textTransform: "uppercase", fontSize: 12 }}>
+            🌐 Language Breakdown
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 12, marginBottom: 20 }}>
+            {allLangs.map(lang => {
+              const count = langCounts[lang] || 0;
+              const max = 10;
+              return (
+                <div key={lang} className="card" style={{ padding: "16px 18px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                    <span style={{ fontSize: 22 }}>{langIcons[lang]}</span>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 14 }}>{lang}</div>
+                      <div style={{ color: "var(--muted)", fontSize: 12, fontWeight: 600 }}>{count} / {max} solved</div>
+                    </div>
+                  </div>
+                  <div className="xp-bar">
+                    <div className="xp-fill" style={{ width: `${(count / max) * 100}%`, background: count === 0 ? "rgba(255,255,255,0.1)" : "linear-gradient(90deg,var(--lime),var(--cyan))" }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Recent achievements */}
+          <div style={{ fontWeight: 800, fontSize: 12, marginBottom: 14, color: "var(--muted)", letterSpacing: 0.5, textTransform: "uppercase" }}>
+            🏅 Earned Badges
+          </div>
+          {earnedBadges.length === 0 ? (
+            <div className="card" style={{ textAlign: "center", padding: 32, color: "var(--muted)", fontWeight: 600, fontSize: 14 }}>
+              No badges yet — start solving challenges to earn your first one! 🐛
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {earnedBadges.map((b, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(200,241,53,0.1)", border: "1px solid rgba(200,241,53,0.25)", borderRadius: 50, padding: "6px 14px 6px 10px" }}>
+                  <span style={{ fontSize: 18 }}>{b.icon}</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: "var(--lime)" }}>{b.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
+
+      {/* ── BADGES TAB ── */}
       {tab === "badges" && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill,minmax(110px,1fr))",
-            gap: 12,
-          }}
-        >
-          {BADGES.map((b, i) => (
-            <div key={i} className="badge-box">
-              <div style={{ fontSize: 32 }}>{b.icon}</div>
-              <div
+        <div>
+          {/* Category filter pills */}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+            {badgeCategories.map(cat => (
+              <button key={cat.key}
+                onClick={() => setBadgeFilter(cat.key)}
                 style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textAlign: "center",
-                  color: "var(--muted)",
-                }}
-              >
-                {b.label}
-              </div>
-            </div>
-          ))}
+                  padding: "6px 16px", borderRadius: 50, fontSize: 12, fontWeight: 800, cursor: "pointer",
+                  background: badgeFilter === cat.key ? "var(--lime)" : "var(--card2)",
+                  color: badgeFilter === cat.key ? "#0a0a12" : "var(--muted)",
+                  border: badgeFilter === cat.key ? "none" : "1px solid var(--border)",
+                  transition: "all .2s",
+                }}>
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Summary line */}
+          <div style={{ marginBottom: 16, fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>
+            <span style={{ color: "var(--lime)", fontWeight: 800 }}>{earnedBadges.length}</span> earned · <span style={{ color: "var(--muted)" }}>{BADGES.length - earnedBadges.length} remaining</span>
+          </div>
+
+          {/* Badge cards with task progress */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {filteredBadges.map((b, i) => {
+              const earned = b.check(user, langCounts);
+              const prog = getBadgeProgress(b);
+              const pct = Math.min((prog.current / prog.target) * 100, 100);
+              return (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: 16,
+                  background: earned ? "rgba(200,241,53,0.06)" : "var(--card)",
+                  border: `1px solid ${earned ? "rgba(200,241,53,0.3)" : "var(--border)"}`,
+                  borderRadius: 16, padding: "16px 20px",
+                  opacity: earned ? 1 : 0.85,
+                  transition: "all .2s",
+                }}>
+                  {/* Icon */}
+                  <div style={{
+                    width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
+                    background: earned ? "rgba(200,241,53,0.15)" : "var(--bg2)",
+                    border: `2px solid ${earned ? "var(--lime)" : "var(--border)"}`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 24, filter: earned ? "none" : "grayscale(1) opacity(0.5)",
+                  }}>
+                    {b.icon}
+                  </div>
+
+                  {/* Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 800, fontSize: 14 }}>{b.label}</span>
+                      {earned && (
+                        <span style={{ background: "rgba(200,241,53,0.2)", color: "var(--lime)", borderRadius: 50, padding: "1px 10px", fontSize: 11, fontWeight: 800 }}>
+                          ✓ EARNED
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ color: "var(--muted)", fontSize: 12, fontWeight: 600, marginBottom: earned ? 0 : 8 }}>
+                      {b.desc}
+                    </div>
+                    {!earned && (
+                      <div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                          <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>Progress</span>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: pct >= 60 ? "var(--lime)" : "var(--muted)" }}>
+                            {prog.current} / {prog.target}
+                          </span>
+                        </div>
+                        <div style={{ height: 5, background: "rgba(255,255,255,0.07)", borderRadius: 50, overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${pct}%`, background: pct >= 100 ? "var(--lime)" : pct >= 50 ? "linear-gradient(90deg,var(--cyan),var(--lime))" : "var(--cyan)", borderRadius: 50, transition: "width .6s ease" }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right: lock or checkmark */}
+                  <div style={{ flexShrink: 0, fontSize: 20 }}>
+                    {earned ? "✅" : "🔒"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
       {tab === "uploads" && (
@@ -5829,9 +6205,25 @@ function DevDash({ onPublish }) {
   );
 }
 
-function DailyChallenge({ go, pickChallenge }) {
+function DailyChallenge({ go, pickChallenge, user }) {
   const [timeLeft, setTimeLeft] = useState("");
+  const [step, setStep] = useState("card"); // "card" | "langpick" | "done"
+  const [selectedLang, setSelectedLang] = useState(null);
+  const today = new Date().toDateString();
 
+  const d = DAILY_CHALLENGE; // today's problem (same concept for all langs)
+
+  const LANGS = [
+    { name: "Python",     icon: "🐍" },
+    { name: "JavaScript", icon: "💛" },
+    { name: "Java",       icon: "☕" },
+    { name: "C",          icon: "⚙️" },
+    { name: "C++",        icon: "🔷" },
+    { name: "HTML",       icon: "🌐" },
+    { name: "CSS",        icon: "🎨" },
+  ];
+
+  // Countdown timer
   useEffect(() => {
     function calcTime() {
       const now = new Date();
@@ -5841,151 +6233,195 @@ function DailyChallenge({ go, pickChallenge }) {
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(
-        `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(
-          s
-        ).padStart(2, "0")}`
-      );
+      setTimeLeft(`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`);
     }
     calcTime();
     const t = setInterval(calcTime, 1000);
     return () => clearInterval(t);
   }, []);
 
-  const d = DAILY_CHALLENGE;
+  // Check if user already solved today's daily
+  useEffect(() => {
+    if (user?.lastDailyDate === today) setStep("done");
+  }, [user]);
 
-  return (
-    <div
-      className="card"
-      style={{
+  function startChallenge() {
+    if (!selectedLang) return;
+    const variant = d.variants[selectedLang];
+    if (!variant) return;
+    // Build a full challenge object from the concept + selected language variant
+    pickChallenge({
+      id: "daily_" + today + "_" + selectedLang,
+      title: d.concept,
+      lang: selectedLang,
+      difficulty: d.difficulty,
+      errorType: d.errorType,
+      description: d.description,
+      xp: d.xp * 2, // 2x bonus
+      isDailyChallenge: true,
+      ...variant,
+    });
+    go("challenge");
+  }
+
+  // ── DONE STATE ──────────────────────────────────────────────
+  if (step === "done") {
+    return (
+      <div className="card" style={{
         marginBottom: 28,
-        background:
-          "linear-gradient(135deg, rgba(200,241,53,0.08), rgba(0,229,255,0.06))",
-        border: "1.5px solid rgba(200,241,53,0.3)",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {/* Background glow */}
-      <div
-        className="glow"
-        style={{
-          width: 300,
-          height: 200,
-          background: "var(--lime)",
-          top: "-50%",
-          right: "-5%",
-        }}
-      />
+        background: "linear-gradient(135deg, rgba(34,197,94,0.08), rgba(0,229,255,0.06))",
+        border: "1.5px solid rgba(34,197,94,0.3)",
+        position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "12px 0" }}>
+          <div style={{ fontSize: 40, marginBottom: 8 }}>✅</div>
+          <div style={{ fontFamily: "var(--display)", fontSize: 22, color: "var(--green)", marginBottom: 6 }}>
+            Daily Challenge Complete!
+          </div>
+          <div style={{ color: "var(--muted)", fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+            You already solved today's challenge. Come back in{" "}
+            <span style={{ color: "var(--cyan)", fontFamily: "var(--mono)" }}>{timeLeft}</span>
+          </div>
+          <div style={{ fontSize: 13, color: "var(--lime)", fontWeight: 700 }}>
+            🔥 Keep your streak going tomorrow!
+          </div>
+        </div>
+      </div>
+    );
+  }
 
+  // ── LANG PICKER STATE ───────────────────────────────────────
+  if (step === "langpick") {
+    const variant = selectedLang ? d.variants[selectedLang] : null;
+    return (
+      <div className="card" style={{
+        marginBottom: 28,
+        background: "linear-gradient(135deg, rgba(200,241,53,0.08), rgba(0,229,255,0.06))",
+        border: "1.5px solid rgba(200,241,53,0.3)",
+        position: "relative", overflow: "hidden",
+      }}>
+        <div className="glow" style={{ width: 300, height: 200, background: "var(--lime)", top: "-50%", right: "-5%" }} />
+        <div style={{ position: "relative", zIndex: 1 }}>
+
+          {/* Header */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+            <button onClick={() => { setStep("card"); setSelectedLang(null); }}
+              style={{ background: "var(--card2)", border: "1px solid var(--border)", borderRadius: 8,
+                padding: "5px 14px", color: "var(--muted)", fontWeight: 700, fontSize: 13 }}>
+              ← Back
+            </button>
+            <div>
+              <div style={{ fontFamily: "var(--display)", fontSize: 20, color: "var(--lime)" }}>
+                ⚡ {d.concept}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>
+                {d.description}
+              </div>
+            </div>
+          </div>
+
+          {/* Language grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 10, marginBottom: 18 }}>
+            {LANGS.map(({ name, icon }) => (
+              <button key={name} onClick={() => setSelectedLang(name)}
+                style={{
+                  background: selectedLang === name ? "rgba(200,241,53,0.2)" : "var(--card2)",
+                  border: selectedLang === name ? "2px solid var(--lime)" : "1.5px solid var(--border)",
+                  borderRadius: 14, padding: "14px 8px", cursor: "pointer",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                  transition: "all .2s",
+                }}>
+                <span style={{ fontSize: 26 }}>{icon}</span>
+                <span style={{ fontWeight: 800, fontSize: 12, color: "var(--text)" }}>{name}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Preview of selected language's code */}
+          {variant && (
+            <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 12,
+              padding: "14px 16px", marginBottom: 16, fontFamily: "var(--mono)", fontSize: 12,
+              lineHeight: 1.8, whiteSpace: "pre" }}>
+              {variant.lines.map((ln, i) => (
+                <div key={i} style={{
+                  color: i === variant.bugLine ? "var(--red)" : "var(--muted)",
+                  fontWeight: i === variant.bugLine ? 700 : 400,
+                }}>
+                  <span style={{ color: "var(--border)", marginRight: 12, userSelect: "none" }}>{i + 1}</span>
+                  {ln || " "}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+            <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>
+              {selectedLang
+                ? `Solving in ${selectedLang} · +${d.xp * 2} XP bonus 🔥`
+                : "Select a language to preview the code →"}
+            </div>
+            <button className="btn-lime" style={{ padding: "12px 28px", fontSize: 14,
+              opacity: selectedLang ? 1 : 0.4, cursor: selectedLang ? "pointer" : "not-allowed" }}
+              onClick={startChallenge} disabled={!selectedLang}>
+              Start Challenge →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── DEFAULT CARD STATE ──────────────────────────────────────
+  return (
+    <div className="card" style={{
+      marginBottom: 28,
+      background: "linear-gradient(135deg, rgba(200,241,53,0.08), rgba(0,229,255,0.06))",
+      border: "1.5px solid rgba(200,241,53,0.3)",
+      position: "relative", overflow: "hidden",
+    }}>
+      <div className="glow" style={{ width: 300, height: 200, background: "var(--lime)", top: "-50%", right: "-5%" }} />
       <div style={{ position: "relative", zIndex: 1 }}>
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 12,
-            marginBottom: 16,
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+          flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 28 }}>⚡</span>
             <div>
-              <div
-                style={{
-                  fontFamily: "var(--display)",
-                  fontSize: 20,
-                  color: "var(--lime)",
-                }}
-              >
+              <div style={{ fontFamily: "var(--display)", fontSize: 20, color: "var(--lime)" }}>
                 Daily Challenge
               </div>
-              <div
-                style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}
-              >
+              <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>
                 Resets in{" "}
-                <span
-                  style={{ color: "var(--cyan)", fontFamily: "var(--mono)" }}
-                >
-                  {timeLeft}
-                </span>
+                <span style={{ color: "var(--cyan)", fontFamily: "var(--mono)" }}>{timeLeft}</span>
               </div>
             </div>
           </div>
-
-          {/* Bonus XP badge */}
-          <div
-            style={{
-              background: "rgba(200,241,53,0.15)",
-              border: "1px solid rgba(200,241,53,0.4)",
-              borderRadius: 50,
-              padding: "6px 16px",
-              fontFamily: "var(--display)",
-              fontSize: 16,
-              color: "var(--lime)",
-            }}
-          >
+          <div style={{ background: "rgba(200,241,53,0.15)", border: "1px solid rgba(200,241,53,0.4)",
+            borderRadius: 50, padding: "6px 16px", fontFamily: "var(--display)", fontSize: 16, color: "var(--lime)" }}>
             +{d.xp * 2} XP BONUS 🔥
           </div>
         </div>
-
-        {/* Challenge info */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
           <div style={{ flex: 1 }}>
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                marginBottom: 8,
-                flexWrap: "wrap",
-              }}
-            >
-              <span className={`tag tag-${d.difficulty}`}>
-                {d.difficulty.toUpperCase()}
-              </span>
-              <span className="tag tag-lang">{d.lang}</span>
+            <div style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+              <span className={`tag tag-${d.difficulty}`}>{d.difficulty.toUpperCase()}</span>
               <span className="chip">🐛 {d.errorType}</span>
+              <span className="chip">🌐 All Languages</span>
             </div>
-            <div
-              style={{
-                fontFamily: "var(--display)",
-                fontSize: 20,
-                marginBottom: 4,
-              }}
-            >
-              {d.title}
-            </div>
-            <div
-              style={{ color: "var(--muted)", fontSize: 13, fontWeight: 600 }}
-            >
+            <div style={{ fontFamily: "var(--display)", fontSize: 20, marginBottom: 4 }}>{d.concept}</div>
+            <div style={{ color: "var(--muted)", fontSize: 13, fontWeight: 600 }}>
               {d.description}
             </div>
           </div>
-
-          <button
-            className="btn-lime"
-            style={{ padding: "12px 28px", fontSize: 14, flexShrink: 0 }}
-            onClick={() => {
-              pickChallenge({ ...d, xp: d.xp * 2 });
-              go("challenge");
-            }}
-          >
-            Solve Today's Bug →
+          <button className="btn-lime" style={{ padding: "12px 28px", fontSize: 14, flexShrink: 0 }}
+            onClick={() => setStep("langpick")}>
+            Choose Language →
           </button>
         </div>
       </div>
     </div>
   );
 }
+
 /* ══ ROOT ══ */
 export default function App() {
   const [page, setPage] = useState("landing");
@@ -6005,7 +6441,7 @@ export default function App() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser && !user) {
+      if (firebaseUser) {
         try {
           const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
           if (userDoc.exists()) {
@@ -6028,10 +6464,19 @@ export default function App() {
             await setDoc(doc(db, "users", firebaseUser.uid), fallbackData);
             setUser(fallbackData);
           }
-          setPage("dashboard");
+          // Only navigate to dashboard if currently on an auth page
+          setPage((prev) =>
+            ["landing", "login", "signup", "devlogin"].includes(prev)
+              ? "dashboard"
+              : prev
+          );
         } catch (e) {
           console.error("Error loading user data:", e);
         }
+      } else {
+        // User signed out
+        setUser(null);
+        setPage("landing");
       }
     });
     return () => unsub();
