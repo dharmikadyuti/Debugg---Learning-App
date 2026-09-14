@@ -8,6 +8,8 @@ import {
   signOut,
   GoogleAuthProvider, // ← add this
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   onAuthStateChanged,
   updateProfile,
 } from "firebase/auth";
@@ -2424,7 +2426,8 @@ function Auth({ mode, go, setUser }) {
           createdAt: serverTimestamp(),
         };
         await setDoc(doc(db, "users", cred.user.uid), newUserData);
-        // onAuthStateChanged will handle navigation
+        setUser(newUserData);
+        go("dashboard");
       } else {
         const cred = await signInWithEmailAndPassword(auth, email, pass);
         const userDoc = await getDoc(doc(db, "users", cred.user.uid));
@@ -2447,7 +2450,7 @@ function Auth({ mode, go, setUser }) {
           await setDoc(doc(db, "users", cred.user.uid), fallbackData);
           setUser(fallbackData);
         }
-        // onAuthStateChanged will handle navigation
+        go("dashboard");
       }
     } catch (error) {
       if (error.code === "auth/email-already-in-use")
@@ -2495,7 +2498,40 @@ function Auth({ mode, go, setUser }) {
       // Do NOT call go("dashboard") here — user state is async.
       // onAuthStateChanged below will set user + navigate once state is ready.
     } catch (error) {
-      setErr("Google sign-in failed. Try again.");
+      // ALWAYS log the real error to the console — the message shown in the
+      // UI was hiding it before, which is why you couldn't tell what broke.
+      console.error("Google sign-in error:", error.code, error.message);
+
+      if (
+        error.code === "auth/popup-blocked" ||
+        error.code === "auth/popup-closed-by-user" ||
+        error.code === "auth/cancelled-popup-request" ||
+        error.code === "auth/operation-not-supported-in-this-environment"
+      ) {
+        // Popups are commonly blocked inside sandboxed previews
+        // (CodeSandbox / StackBlitz / embedded iframes). Fall back to a
+        // full-page redirect flow instead.
+        try {
+          await signInWithRedirect(auth, new GoogleAuthProvider());
+          return; // page will navigate away; result is handled on return
+        } catch (redirectErr) {
+          console.error("Google redirect sign-in error:", redirectErr);
+          setErr(
+            "Google sign-in popup was blocked and redirect sign-in also failed: " +
+              redirectErr.message
+          );
+        }
+      } else if (error.code === "auth/unauthorized-domain") {
+        setErr(
+          "This domain isn't authorized for Google sign-in. Add it under Firebase Console → Authentication → Settings → Authorized domains."
+        );
+      } else if (error.code === "auth/account-exists-with-different-credential") {
+        setErr(
+          "An account already exists with this email using a different sign-in method."
+        );
+      } else {
+        setErr("Google sign-in failed: " + (error.message || error.code));
+      }
     }
     setLoading(false);
   }
@@ -4755,14 +4791,7 @@ function Profile({ user, setUser, onUpload }) {
   // Compute per-language solve counts from user's solvedChallenges array
   const langCounts = {};
   (user.solvedChallenges || []).forEach((id) => {
-    const ch = CHALLENGES.find((c) => String(c.id) === String(id));
-    // Also handle daily challenge IDs like "daily_Sat Apr 25 2026_Python"
-    if (!ch && String(id).startsWith('daily_')) {
-      const parts = String(id).split('_');
-      const lang = parts[parts.length - 1];
-      if (lang) langCounts[lang] = (langCounts[lang] || 0) + 1;
-      return;
-    }
+    const ch = (window.__ALL_CHALLENGES__ || []).find((c) => c.id === id);
     if (ch) langCounts[ch.lang] = (langCounts[ch.lang] || 0) + 1;
   });
 
@@ -6440,6 +6469,11 @@ export default function App() {
   });
 
   useEffect(() => {
+    // Catch the result (or error) of a signInWithRedirect() call, which
+    // completes here after the page reloads.
+    getRedirectResult(auth).catch((err) => {
+      if (err) console.error("Google redirect result error:", err.code, err.message);
+    });
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
@@ -6464,19 +6498,13 @@ export default function App() {
             await setDoc(doc(db, "users", firebaseUser.uid), fallbackData);
             setUser(fallbackData);
           }
-          // Only navigate to dashboard if currently on an auth page
-          setPage((prev) =>
-            ["landing", "login", "signup", "devlogin"].includes(prev)
-              ? "dashboard"
-              : prev
-          );
+          setPage("dashboard");
         } catch (e) {
           console.error("Error loading user data:", e);
         }
       } else {
         // User signed out
         setUser(null);
-        setPage("landing");
       }
     });
     return () => unsub();
