@@ -1,2 +1,2 @@
 # Debugg---Learning-App
-React Application
+A React based learning Application
