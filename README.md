@@ -6,7 +6,6 @@ Debugg is a gamified coding-education platform where instead of writing code fro
 
 <img width="1917" height="821" alt="image" src="https://github.com/user-attachments/assets/7d2f4636-5cb1-454c-bef3-2ce3ce740ad2" />
 
-
 ---
 
 ## ✨ Features
@@ -26,15 +25,10 @@ Debugg is a gamified coding-education platform where instead of writing code fro
 
 ## 🖥️ Screenshots
 
-> Add screenshots to `docs/images/` and update the paths below — see the **Images Needed** section for the full list.
-
 | Landing Page | Dashboard | Challenge (Debug View) |
 |---|---|---|
+| ![Landing](docs/images/hero-landing.png) | ![Dashboard](docs/images/dashboard.png) | ![Challenge](docs/images/challenge-page.png) |
 
-<img width="1920" height="1080" alt="Screenshot (256)" src="https://github.com/user-attachments/assets/1fbb5956-c889-4579-8b67-55a956b73ccd" />
-
-
- | ![Dashboard](docs/images/dashboard.png) | ![Challenge](docs/images/challenge-page.png) |
 
 | Levels | Leaderboard | Community |
 |---|---|---|
@@ -44,7 +38,7 @@ Debugg is a gamified coding-education platform where instead of writing code fro
 
 ## 🧰 Tech Stack
 
-- **Frontend:** React (functional components + hooks)
+- **Frontend:** React + TypeScript (functional components + hooks)
 - **Styling:** Custom CSS-in-JS / injected stylesheet (Nunito, Fredoka One, JetBrains Mono via Google Fonts)
 - **Backend / Database:** Firebase Authentication + Cloud Firestore
 - **Auth Providers:** Email/Password, Google (OAuth via `signInWithPopup`)
@@ -55,16 +49,21 @@ Debugg is a gamified coding-education platform where instead of writing code fro
 
 ```
 debugg/
-├── public/
+├── public/                 # Static assets
 ├── src/
-│   ├── App.jsx / App.js        # Main app — routing, state, all page components
-│   ├── firebase.js             # Firebase config & initialization (auth, db)
-│   ├── styles.css               # Base stylesheet import
+│   ├── App.tsx             # Main app and page components
+│   ├── firebase.js         # Firebase configuration and initialization
+│   ├── styles.css          # Global styles
 │   └── ...
+├── functions/              # Firebase backend functions
 ├── docs/
-│   └── images/                  # README screenshots (see below)
-├── .env.local                   # Firebase environment variables (not committed)
-├── package.json
+│   └── images/             # README screenshots
+├── .env.local              # Environment variables (not committed)
+├── firebase.json           # Firebase configuration
+├── firestore.rules         # Firestore security rules
+├── tsconfig.json           # TypeScript configuration
+├── package.json             # Project dependencies and scripts
+├── package-lock.json
 └── README.md
 ```
 
@@ -78,30 +77,20 @@ debugg/
 - npm or yarn
 - A [Firebase](https://firebase.google.com/) project (Firestore + Authentication enabled)
 
-### 1. Clone the repo
-
-```bash
-git clone https://github.com/<your-username>/debugg.git
-cd debugg
-```
-
-### 2. Install dependencies
-
+### 1. Install dependencies
 ```bash
 npm install
 # or
 yarn install
 ```
 
-### 3. Configure Firebase
-
-Create a `src/firebase.js` file with your Firebase project config:
+### 2. Configure Firebase
 
 ```js
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-
+ 
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -110,7 +99,7 @@ const firebaseConfig = {
   messagingSenderId: "YOUR_SENDER_ID",
   appId: "YOUR_APP_ID",
 };
-
+ 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
@@ -120,16 +109,13 @@ In the Firebase console, enable:
 - **Authentication** → Email/Password and Google sign-in providers
 - **Firestore Database** → with collections: `users`, `challenges`, `posts`, `submissions`
 
-### 4. Run the app
+### 3. Run the app
 
 ```bash
 npm start
 # or
 yarn start
 ```
-
-The app will be available at `http://localhost:3000`.
-
 ---
 
 ## 🗺️ App Pages
@@ -149,22 +135,13 @@ The app will be available at `http://localhost:3000`.
 
 ---
 
-## 🖼️ Images Needed
+## 🚀 Future Improvements
 
-The README above references screenshots that should be captured from a running instance of the app and placed in `docs/images/`:
-
-| File | Where to capture it |
-|---|---|
-| `docs/images/hero-landing.png` | The **Landing** page hero section |
-| `docs/images/dashboard.png` | The **Dashboard** page with a few challenges visible |
-| `docs/images/challenge-page.png` | An open **Challenge Page** mid-debug (a line selected) |
-| `docs/images/levels.png` | The **Levels** page showing language/difficulty picker |
-| `docs/images/leaderboard.png` | The **Leaderboard** page (global tab) |
-| `docs/images/discuss.png` | The **Discuss** community feed with a couple of posts |
-| `docs/images/profile.png` *(optional)* | The **Profile** page showing stats/badges |
-| `docs/images/dev-dashboard.png` *(optional)* | The **Dev Dashboard** submission queue |
-
-You can also add a logo/app icon at `docs/images/logo.png` if you'd like to use it at the top of the README instead of the hero screenshot.
+- Add support for more programming languages
+- Introduce streaks and achievement milestones
+- Add more advanced debugging challenges
+- Improve challenge recommendation based on user performance
+- Add automated challenge validation
 
 ---
 
@@ -172,6 +149,3 @@ You can also add a logo/app icon at `docs/images/logo.png` if you'd like to use 
 
 Contributions are welcome! Feel free to open an issue or submit a pull request for new challenges, bug fixes, or feature ideas.
 
-## 📄 License
-
-Add your chosen license here (e.g. MIT).
