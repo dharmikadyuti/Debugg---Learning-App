@@ -4,7 +4,8 @@
 
 Debugg is a gamified coding-education platform where instead of writing code from scratch, you **fix real, buggy code**. Spot the bug, apply the fix, run it, and earn XP, badges, and leaderboard rank as you level up across languages like JavaScript, Python, Java, and HTML.
 
-![Debugg Landing Page](docs/images/hero-landing.png)
+![Debugg Landing Page](<img width="1917" height="821" alt="image" src="https://github.com/user-attachments/assets/7d2f4636-5cb1-454c-bef3-2ce3ce740ad2" />)
+
 
 ---
 
