@@ -1,1 +1,5 @@
-node_modulesscripts/serviceAccountKey.json^M
+node_modules/
+.env*
+build/
+.firebase/
+node_modules/scripts/serviceAccountKey.json
