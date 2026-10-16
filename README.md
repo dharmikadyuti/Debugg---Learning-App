@@ -42,8 +42,8 @@
 Most coding platforms ask you to write code from a blank screen. But in real jobs, developers spend most of their time **reading and fixing** code that already exists.
 
 **Debugg**  is an interactive debugging practice platform that helps developers improve their problem-solving skills by identifying and fixing bugs in existing code. Users can explore programming challenges, track their progress, earn XP, and participate in community discussions.
-
 Instead of focusing only on writing code from scratch, Debugg encourages learners to develop the debugging skills used in real-world software development.
+
 ---
 
 ## ✨ Features
