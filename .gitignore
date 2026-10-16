@@ -1,5 +1,9 @@
+
 node_modules/
 .env*
+!.env.example
 build/
+dist/
 .firebase/
+.firebaserc
 node_modules/scripts/serviceAccountKey.json
