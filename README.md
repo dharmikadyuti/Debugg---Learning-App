@@ -67,19 +67,33 @@ Most coding platforms ask you to write code from a blank screen. But in real job
 
 <table>
   <tr>
-    <td align="center"><b>Dashboard</b><br/><img src="docs/images/dashboard.png" alt="Dashboard" /></td>
-    <td align="center"><b>Challenge (Debug View)</b><br/><img src="docs/images/challenge-page.png" alt="Challenge page" /></td>
+    <td width="50%" valign="top" align="center">
+      <b>1. Dashboard</b><br/><br/>
+      <img src="docs/images/dashboard.png" alt="Dashboard" width="100%" />
+    </td>
+    <td width="50%" valign="top" align="center">
+      <b>2. Challenge (Debug View)</b><br/><br/>
+      <img src="docs/images/challenge-page.png" alt="Challenge page" width="100%" />
+    </td>
   </tr>
   <tr>
-    <td align="center"><b>Levels</b><br/><img src="docs/images/levels.png" alt="Levels" /></td>
-    <td align="center"><b>Leaderboard</b><br/><img src="docs/images/leaderboard.png" alt="Leaderboard" /></td>
-  </tr>
-  <tr>
-    <td align="center" colspan="2"><b>Community</b><br/><img src="docs/images/discuss.png" alt="Community" width="50%" /></td>
+    <td width="50%" valign="top" align="center">
+      <b>3. Leaderboard</b><br/><br/>
+      <img src="docs/images/leaderboard.png" alt="Leaderboard" width="100%" />
+    </td>
+    <td width="50%" valign="top" align="center">
+      <b>4. Community</b><br/><br/>
+      <img src="docs/images/discuss.png" alt="Community" width="100%" />
+    </td>
   </tr>
 </table>
-
+<div align="center">
+**5. Levels**
+ 
+<img src="docs/images/levels.png" alt="Levels" width="60%" />
+</div>
 ---
+
 
 ## 🔄 How It Works
 
