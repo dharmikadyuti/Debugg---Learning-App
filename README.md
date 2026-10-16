@@ -41,8 +41,9 @@
 
 Most coding platforms ask you to write code from a blank screen. But in real jobs, developers spend most of their time **reading and fixing** code that already exists.
 
-**Debugg** flips the learning model: you get a buggy snippet, find the problem, apply the fix, run it, and earn XP. Progress through levels across **JavaScript, Python, Java, and HTML**, climb the leaderboard, and learn alongside a community of fellow debuggers.
+**Debugg**  is an interactive debugging practice platform that helps developers improve their problem-solving skills by identifying and fixing bugs in existing code. Users can explore programming challenges, track their progress, earn XP, and participate in community discussions.
 
+Instead of focusing only on writing code from scratch, Debugg encourages learners to develop the debugging skills used in real-world software development.
 ---
 
 ## ✨ Features
@@ -144,11 +145,19 @@ npm install
 
 ### 3. Set up Firebase
 
-In the [Firebase Console](https://console.firebase.google.com/):
+1. Create a project in the [Firebase Console](https://console.firebase.google.com/).
+2. Register a Web App and copy its Firebase configuration.
+3. Enable Email/Password and Google sign-in under Authentication.
+4. Create a Cloud Firestore database.
 
-- **Authentication** → enable the **Email/Password** and **Google** providers
-- **Firestore Database** → create a database (collections are listed in [Data Model](#-data-model))
-- **Project Settings** → copy your web app config
+Configure your Firebase credentials using the method
+expected by the application. If using Vite environment
+variables, define the required `VITE_FIREBASE_*` variables
+in your local environment and your deployment provider.
+
+Never commit private service-account credentials or
+environment files containing secrets.
+
 
 Then create a `.env.local` file in the project root:
 
@@ -162,9 +171,9 @@ REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 REACT_APP_FIREBASE_APP_ID=your_app_id
 ```
 
-Your Firebase initialization (`src/firebase.js`) reads from these values:
+Your Firebase initialization (`src/firebase.ts`) reads from these values:
 
-```js
+```ts
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -210,7 +219,7 @@ Debugg---Learning-App/
 ├── public/                 # Static assets
 ├── src/
 │   ├── App.tsx             # Main app and page components
-│   ├── firebase.js         # Firebase initialization
+│   ├── firebase.ts         # Firebase initialization
 │   ├── styles.css          # Global styles
 │   └── ...
 ├── functions/              # Firebase Cloud Functions
