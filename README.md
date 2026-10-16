@@ -87,11 +87,10 @@ Most coding platforms ask you to write code from a blank screen. But in real job
     </td>
   </tr>
 </table>
-<div align="center">
-**5. Levels**
- 
-<img src="docs/images/levels.png" alt="Levels" width="60%" />
-</div>
+<p align="center">
+  <b>5. Levels</b><br/><br/>
+  <img src="docs/images/levels.png" alt="Levels" width="60%" />
+</p>
 ---
 
 
